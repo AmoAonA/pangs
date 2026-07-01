@@ -1,0 +1,13 @@
+torch>=2.0
+numpy
+scipy
+scikit-image
+tifffile
+Pillow
+torchvision
+pyyaml
+h5py
+imageio
+opencv-python
+matplotlib
+torchmetrics

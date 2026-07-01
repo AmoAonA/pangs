@@ -1,0 +1,353 @@
+# PanSplat Configuration
+# ======================
+# Best-performing 3-stage pipeline with iterative Stage 2
+# G*P fuse mode + MTF-GLP target + separate LIG residual injection + DashGaussian freq-guided Stage1
+
+# -- General -------------------------------------------------------------------
+seed:                  123
+device:                "cuda:0"
+eval:                  False
+quantize:              False
+pos_bits:              32
+scale_bits:            32
+rot_bits:              32
+feat_bits:             32
+log_root:              "results"
+exp_name:              "pansplat"
+log_level:             "INFO"
+save_image_format:     "png"
+save_plot_format:      "jpg"
+save_image_steps:      100000
+save_ckpt_steps:       100000
+eval_steps:            1000
+gamma:                 1.0
+
+# -- Data ----------------------------------------------------------------------
+data_root:             "media"
+input_path:            "ms.tif"
+ref_path:              "pan.tif"
+downsample:            False
+downsample_ratio:      -4.0
+
+# -- Gaussians -----------------------------------------------------------------
+num_gaussians:         30000
+init_scale:            5.0
+topk:                  10
+disable_topk_norm:     False
+disable_inverse_scale: False
+disable_color_init:    False
+init_mode:             "gradient"
+init_random_ratio:     0.3
+smap_filter_size:      20
+
+# -- Loss ----------------------------------------------------------------------
+l1_loss_ratio:         1.0
+l2_loss_ratio:         0.0
+ssim_loss_ratio:       0.1
+pan_grad_weight:       1.0
+pan_hp_weight:         1.0
+pan_ssim_weight:       0.0
+pan_highpass_ksize:    7
+
+# -- Stage 1: PAN geometry (DashGaussian freq-guided) --------------------------
+stage1_steps:          10000
+stage1_min_steps:      6000
+stage1_early_stop_patience: 2
+stage1_early_stop_min_delta: 1.0e-4
+stage1_early_stop_min_delta_rel: 0.05
+stage1_freq_guided:    True
+stage1_freq_levels:    4
+stage1_freq_max_scale: 4
+stage1_scaffold_expand: False
+stage1_scaffold_parent_init: "pan_gradient"  # pan_gradient | default
+stage1_scaffold_jitter_scale: 0.75
+stage1_scaffold_child_scale_mult: 0.65
+stage1_scaffold_rot_jitter: 0.10
+stage1_scaffold_score_power: 1.5
+stage1_scaffold_refine_steps: 0
+
+# -- Stage 2: Spectral (G*P mode + MTF-GLP target) ----------------------------
+stage2_steps:          400
+stage2_lr_weight:      0.0
+stage2_lr_consistency_mode: "direct_lr"  # direct_lr | degrade_hr
+stage2_hr_weight:      0.7
+stage2_pan_weight:     0.06
+stage2_pan_every:      1
+stage2_freq_guided:    False
+stage2_freq_global:    False
+stage2_freq_total_rounds: 0
+stage2_freq_start_sigma: 4.0
+stage2_freq_end_sigma: 0.0
+stage2_freq_until:     1.0
+stage2_freq_decay_power: 1.0
+stage2_pan_l1_weight:  0.0
+stage2_pan_hf_start_frac: 0.25
+stage2_pan_hf_ramp_power: 1.0
+stage2_resolution_curriculum: False
+stage2_resolution_scales: "4,2,1"
+stage2_resolution_step_fracs: "1,1,1"
+stage2_resolution_init_target: "mtf_glp"  # mtf_glp | lrms
+stage2_resolution_lr_weight: 0.7
+stage2_resolution_mtf_weight: 0.7
+stage2_resolution_full_target_weight: 0.0
+stage2_resolution_pan_weight: 0.06
+stage2_sam_weight:     0.0
+stage2_charbonnier_weight: 0.0
+stage2_cosine_weight:  0.0
+stage2_lms_weight:     0.0
+stage2_lms_blur_ksize: 11
+stage2_coeff_tv_weight: 0.0
+stage2_g_lr_ratio_weight: 0.0
+stage2_g_tv_weight:     0.0
+stage2_g_edge_aware:    True
+stage2_g_edge_alpha:    10.0
+stage2_g_ratio_eps:     1.0e-3
+stage2_g_ratio_clip:    4.0
+stage2_hr_target_mode: "mtf_glp"
+stage2_sfim_sigma:     3.0
+stage2_sfim_eps:       1.0e-6
+stage2_target_blend_alpha: 0.5
+stage2_fuse_mode:      "g_times_p"   # g_times_p | g_times_input_phat | base_only
+stage2_feat_dim:       4
+stage2_decode_mode:    "direct"      # direct | post_render_mlp | hypergs_decoder
+stage2_decoder_hidden: 32
+stage2_decoder_residual_scale: 1.0
+stage2_decoder_lr_mult: 1.0
+stage2_latent_init_std: 1.0e-3
+stage2_g_detail_mode: "none"       # none | highpass
+stage2_detail_lr_mult: 0.2
+stage2_detail_scale:   1.0
+stage2_detail_clamp:   0.08
+stage2_detail_highpass_ksize: 7
+stage2_detail_l1_weight: 0.0
+stage2_detail_reset_on_reinit: True
+stage2_kernel_affine_gain_scale: 1.0
+stage2_kernel_affine_gain_clip: 0.0
+stage2_kernel_affine_center_pan: False
+stage2_kernel_affine_low_sigma: 4.0
+stage2_kernel_affine_base_low_weight: 0.0
+stage2_kernel_affine_base_low_target: "lms"  # lms | target
+stage2_kernel_affine_detail_low_weight: 0.0
+stage2_kernel_affine_detail_l1_weight: 0.0
+stage2_kernel_affine_detail_tv_weight: 0.0
+stage2_kernel_affine_detail_pan_corr_weight: 0.0
+stage2_pan_res_gain_scale: 1.0
+stage2_pan_res_gain_clip: 0.5
+stage2_pan_residual_clip: 0.08
+stage2_reinit_on_start: True
+stage2_g_init_mode:    "target_div_base"  # target_div_base | psdip_ratio | psdip_prefit | psdip_cnn
+stage2_g_init_target:  "bicubic"
+stage2_g_init_steps:   0
+stage2_g_init_lr:      5.0e-3
+stage2_g_init_log_every: 200
+stage2_g_init_smooth_ksize: 0
+stage2_g_init_prefit_each_round: False
+stage2_psdip_blur_base: True
+stage2_psdip_mtf_kernel_size: 41
+stage2_phat_floor:    1.0e-2
+stage2_base_eps:      1.0e-2
+stage2_mtf_gain_scale: 1.0
+stage2_mtf_gain_clip:  1.0
+stage2_finetune_geometry: True
+stage2_finetune_xy:   True
+stage2_finetune_rot:  False
+stage2_finetune_scale: True
+stage2_geo_lr_mult:    0.1
+stage2_self_supervised_only: False
+stage2_self_warmup_steps: 400
+stage2_self_steps:     800
+stage2_self_lr_weight: 1.0
+stage2_self_target_weight: 0.0
+stage2_self_pan_weight: 0.06
+stage2_self_sam_weight: 0.0
+stage2_self_coeff_reg_weight: 0.0
+stage2_self_geo_reg_weight: 0.0
+stage2_self_eval_every: 50
+stage2_self_select_lr_floor: 30.0
+stage2_self_select_target_weight: 50.0
+stage2_self_select_pan_weight: 1.0
+stage2_self_select_sam_weight: 0.02
+stage2_self_train_xy:  True
+stage2_self_train_rot: True
+stage2_self_train_scale: False
+stage2_self_geo_lr_mult: 0.05
+stage2_self_feat_lr_mult: 0.5
+stage2_use_x_field:    False
+stage2_x_lr_mult:      1.0
+stage2_x_prior_weight: 0.1
+stage2_alternate_xg:   False
+stage2_alternate_g_lr_weight: 0.0
+output_lr_projection_mode: "none"  # none | affine | residual | affine_residual
+output_lr_projection_strength: 1.0
+output_lr_projection_gain_clip: 1.25
+output_lr_projection_residual_clip: 0.0
+stage2_variational_only: False
+stage2_variational_rounds: 5
+stage2_variational_x_steps: 100
+stage2_variational_x_lr: 5.0e-2
+stage2_variational_x_lr_weight: 1.0
+stage2_variational_x_prior_weight: 0.0
+stage2_variational_x_pan_weight: 0.0
+stage2_variational_output: "x"
+hard_patch_stage2_psnr_threshold: 30.0
+hard_patch_mtf_gain_scale: 1.5
+hard_patch_stage3_output_mix: 0.0
+hard_patch_max_rounds: 5
+lambda_ms:             1.0
+
+# -- Stage 3: Detail injection (LIG residual + low-rank aux) -------------------
+stage3_steps:          300
+stage3_skip:           False
+stage3_loop_mode:      "after"  # after | inside
+stage3_after_loop_target_mode: "mtf_glp"  # mtf_glp | current
+stage3_injection_mode: "lig"
+stage3_additive_clamp: 0.10
+stage3_lig_normalize:  True
+stage3_aux_highpass:   False
+stage3_neg_gain_clip:  0.05
+stage3_pos_gain_clip:  0.15
+stage3_dark_th:        0.12
+stage3_dark_gamma:     0.5
+stage3_aux_blur_ksize: 5
+stage3_aux_res_lr_mult: 0.10
+stage3_aux_res_smooth_weight: 0.3
+stage3_aux_res_clamp:  0.08
+stage3_output_mix:     1.0
+stage3_adaptive_output_mix: True
+stage3_mix_candidates: "0.0,0.25,0.5,0.75,1.0"
+stage3_lr_degrade_mode: "mtf"
+stage3_mtf_sigma_scale: 0.50
+stage3_sam_loss_weight: 0.10
+stage3_gain_consistency_weight: 0.02
+stage3_proxy_sam_weight: 0.10
+
+# -- Iterative refinement (Stage 2 repeated; Stage 3 runs separately) ----------
+iterative_rounds:      20
+iterative_s2_decay:    1.0
+iterative_s3_decay:    1.0  # used only when stage3_loop_mode="inside"
+iterative_target_mix:  1.0
+iterative_min_rounds:  3
+iterative_early_stop_patience: 2
+iterative_early_stop_min_delta: 0.05
+
+# -- Optimization --------------------------------------------------------------
+disable_tiles:         False
+max_steps:             10000
+pos_lr:                5.0e-4
+scale_lr:              2.0e-3
+rot_lr:                2.0e-3
+feat_lr:               5.0e-3
+disable_lr_schedule:   False
+decay_ratio:           10.0
+check_decay_steps:     1000
+max_decay_times:       1
+decay_threshold:       1.0e-3
+
+# -- Progressive densification ------------------------------------------------
+disable_prog_optim:    False
+initial_ratio:         0.5
+add_steps:             500
+add_times:             4
+post_min_steps:        3000
+stage2_add_times:      0
+stage2_add_steps:      500
+stage2_densify_mode:   pan_highfreq
+stage2_densify_score_mode: pan_hf
+stage2_densify_pan_hf_sigma: 2.0
+stage2_densify_ratio_init: current
+stage2_densify_train_new_geo: False
+stage2_densify_pan_power: 1.0
+stage2_densify_error_power: 1.0
+stage2_densify_score_eps: 1.0e-8
+stage2_densify_lr_error_weight: 1.0
+stage2_densify_pan_error_weight: 1.0
+stage2_densify_gt_hr_source: stage2_target
+stage2_densify_gt_hr_path: ""
+stage2_densify_new_scale_pixels: 0.0
+stage2_densify_new_scale_mult: 1.0
+stage2_new_geo_pos_lr_mult: 1.0
+stage2_new_geo_scale_lr_mult: 1.0
+stage2_new_geo_rot_lr_mult: 1.0
+stage2_densify_bright_mask_mode: "off"    # off | percentile | otsu
+stage2_densify_bright_top_percent: 10.0
+stage2_densify_bright_blur_sigma: 3.0
+stage2_densify_bright_score_weight: 1.0
+stage2_densify_bright_add_ratio: 0.0
+stage2_densify_bright_scale_mult: 1.0
+stage2_densify_bright_ratio_init: "off"   # off | lr_ratio | blend
+stage2_densify_bright_ratio_blend_alpha: 0.5
+stage2_densify_bright_ratio_eps: 1.0e-6
+stage2_densify_bright_ratio_clamp: 5.0
+
+# -- Stage2 ablation switches --------------------------------------------------
+stage2_rr_loss_weight:      0.0
+stage2_rr_loss_type:        l1
+stage2_base_ratio_init_mode: zero
+stage2_base_ratio_init_eps: 1.0e-6
+stage2_base_ratio_init_clamp: 5.0
+stage2_ratio_init_mode:     zero
+stage2_ratio_init_eps:      1.0e-6
+stage2_ratio_init_clamp:    5.0
+stage2_ucl_render_norm_mode: topk_norm  # topk_norm | sum
+stage2_product_pan_mode:    fixed_s1
+stage2_residual_branch:     False
+stage2_residual_weight:     1.0
+stage2_residual_init:       zero
+stage2_residual_gate_mode:  pan_hf
+stage2_residual_gate:       pan_hf
+stage2_residual_gate_sigma: 2.0
+stage2_residual_gate_power: 1.0
+stage2_residual_l1_weight:  0.0
+stage2_residual_tv_weight:  0.0
+stage2_residual_lr_zero_weight: 0.0
+stage2_residual_lr_mult:    1.0
+stage2_residual_basis_rank:  0
+stage2_residual_basis_init:   identity
+stage2_residual_basis_lr_mult: 0.5
+stage2_residual_basis_ortho_weight: 0.0
+stage2_ucl_tv_weight:       0.001
+stage2_ucl_tv_schedule_enabled: False
+stage2_ucl_tv_schedule_start_frac: 0.7
+stage2_ucl_tv_schedule_ramp_frac: 0.0
+stage2_ucl_fixed_pan_gain_tv_weight: 0.001
+stage2_ucl_fixed_pan_gain_eps: 1.0e-6
+stage2_ucl_obs_ratio_weight: 0.0
+stage2_ucl_obs_ratio_eps: 1.0e-3
+stage2_ucl_obs_ratio_clip: 4.0
+stage2_ucl_obs_ratio_mode: lr
+stage2_ucl_obs_ratio_loss: l1
+stage2_oracle_inmask_gt_weight: 0.0
+stage2_oracle_inmask_gt_topk:   0.03
+stage2_ratio_split_mode:    "off"
+stage2_ratio_hf_alpha:      0.1
+stage2_ratio_split_dir_weight: 0.0
+stage2_ratio_split_dir_sigma: 2.0
+stage2_ratio_split_ref_pan_sigma: 2.0
+stage2_ratio_split_ref_eps: 1.0e-6
+stage2_ratio_hf_low_zero_weight: 0.0
+stage2_ratio_hf_low_zero_sigma: 4.0
+stage2_ratio_cluster_mode: "off"
+stage2_ratio_cluster_tile: 32
+stage2_ratio_cluster_target_per_k: 64
+stage2_ratio_cluster_max_k: 4
+stage2_ratio_cluster_iters: 8
+stage2_ratio_cluster_eps: 1.0e-6
+stage2_ratio_cluster_ratio_clamp: 5.0
+stage2_ratio_cluster_lr_mult: 1.0
+stage2_ratio_poly_order: 0
+stage2_ratio_poly_init: "zero"
+stage2_ratio_poly_grad_scale: 0.01
+stage2_ratio_poly_scale: 1.0
+stage2_ratio_poly_lr_mult: 0.2
+stage2_ratio_poly_l2_weight: 0.0
+stage2_ratio_band_mask: False
+stage2_ratio_band_mask_mode: "sigmoid2"
+stage2_ratio_band_mask_gain: 1.0
+stage2_ratio_band_mask_lr_mult: 1.0
+stage2_ratio_band_mask_l2_weight: 0.0
+stage2_hr_sam_prior_weight: 0.0
+stage2_sam_lr_weight:       0.0
+stage2_ratio_dir_weight:    0.0
+stage2_ratio_dir_low_sigma:  2.0
+stage2_ratio_ref_pan_low_sigma: 2.0
+stage2_ratio_ref_eps:       1.0e-6
